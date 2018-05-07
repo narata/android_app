@@ -18,5 +18,6 @@ urlpatterns = [
     url(r'^add_comment$', views.add_comment),
     url(r'^eaten$', views.eaten),
     url(r'^get_self_comment$', views.get_self_comment),
-    url(r'^test$', views.test)
+    url(r'^test$', views.test),
+    # url(r'^insert_user$', views.insert_user)
 ]

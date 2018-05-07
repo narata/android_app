@@ -3,17 +3,27 @@ from django.contrib import auth
 from django.utils.datastructures import MultiValueDictKeyError
 from django.http import HttpResponse, JsonResponse
 from .models import Recommend, Photo, Business, Comment
+from . import models
 from django.utils.timezone import now
+import uuid
 
 
 # 注册
 def create_user(request):
     try:
         username = request.POST['username']
-        password = request.POST['password']
-        email = request.POST['email']
-        user = User.objects.create_user(username=username, email=email, password=password)
-        user.save()
+        if 'password' in request.POST:
+            password = request.POST['password']
+        else:
+            password = ''
+        if 'email' in request.POST:
+            email = request.POST['email']
+        else:
+            email = ''
+        user1 = User.objects.create_user(username=username, email=email, password=password)
+        user1.save()
+        user2 = models.User(id=username, user_id=user1.id)
+        user2.save()
     except Exception:
         result = False
     else:
@@ -35,7 +45,6 @@ def login(request):
             result['result'] = True
             result['data'] = []
             result['data'].append({
-                "userid": user.id,
                 "username": username
             })
         else:
@@ -64,7 +73,7 @@ def logout(request):
 def get_user_business(request):
     result = {}
     try:
-        user_id = int(request.GET['user_id'])
+        user_id = request.GET['user_id']
         result['result'] = True
         result['data'] = []
         recommend = Recommend.objects.filter(user_id=user_id)
@@ -73,7 +82,9 @@ def get_user_business(request):
             result["data"].append({
                 "business_id": data.business.id,
                 "business_name": data.business.name,
-                "img_url": photo.img_url
+                "star": data.business.star,
+                "attribute": data.business.attribute,
+                "comment_count": data.business.comment_count,
             })
     except Exception:
         result['result'] = False
@@ -84,16 +95,21 @@ def get_user_business(request):
 def get_business_detail(request):
     result = {}
     try:
-        business_id = int(request.GET['business_id'])
-        business = Business.objects.filter(id=int(business_id))
-        photo = Photo.objects.filter(business=business[0])[0]
+        business_id = request.GET['business_id']
+        business = Business.objects.filter(id=business_id)
+        photo = Photo.objects.filter(business=business[0])
         result['result'] = True
         result['data'] = {
             "business_id": business[0].id,
             "business_name": business[0].name,
             "star": business[0].star,
             "attribute": business[0].attribute,
-            "img_url": photo.img_url
+            "comment_count": business[0].comment_count,
+            "photo": [{
+                'caption': buf.caption,
+                'label': buf.label,
+                'img_data': buf.img_data
+            } for buf in photo]
         }
     except MultiValueDictKeyError:
         result['result'] = False
@@ -107,12 +123,20 @@ def get_business_detail(request):
 def add_comment(request):
     result = {}
     try:
-        user_id = int(request.POST['user_id'])
-        business_id = int(request.POST['business_id'])
+        user_id = request.POST['user_id']
+        business_id = request.POST['business_id']
         text = request.POST['text']
         star = float(request.POST['star'])
-        comm = Comment(user_id=user_id, business_id=business_id, text=text, star=star, date=now())
+        comm = Comment(id=uuid.uuid1(), user_id=user_id, business_id=business_id, text=text, star=star, date=now())
         comm.save()
+        user = comm.user
+        user.average_stars = round((user.average_stars * user.comment_count + star) / (user.comment_count + 1), 2)
+        user.comment_count += 1
+        user.save()
+        business = comm.business
+        business.star = round((business.star * business.comment_count + star) / (business.comment_count + 1), 2)
+        business.comment_count += 1
+        business.save()
         result['result'] = True
     except MultiValueDictKeyError:
         result['result'] = False
@@ -126,14 +150,18 @@ def add_comment(request):
 def eaten(request):
     result = {}
     try:
-        user_id = int(request.GET['user_id'])
-        comm = Comment.objects.filter(user_id=user_id).values('business_id', 'business__name').distinct()
+        user_id = request.GET['user_id']
+        comm = Comment.objects.filter(user_id=user_id).values(
+            'business__id', 'business__name', 'business__star', 'business__comment_count'
+        ).distinct()
         result['result'] = True
         result['data'] = []
         for buf in comm:
             result['data'].append({
-                'business_id': buf['business_id'],
-                'business_name': buf['business__name']
+                'business_id': buf['business__id'],
+                'business_name': buf['business__name'],
+                'business_star': buf['business__star'],
+                'business_comment_count': buf['business__comment_count']
             })
     except MultiValueDictKeyError:
         result['result'] = False
@@ -146,7 +174,7 @@ def eaten(request):
 # 查看自己评论
 def get_self_comment(request):
     result = {}
-    user_id = int(request.GET['user_id'])
+    user_id = request.GET['user_id']
     comm = Comment.objects.filter(user_id=user_id)
     result['result'] = True
     result['data'] = []
@@ -158,6 +186,33 @@ def get_self_comment(request):
             "date": buf.date
         })
     return JsonResponse(result)
+
+
+# # 导入user
+# def insert_user(request):
+#     import json
+#     from . import models
+#     with open('databases/dataset/user.json', 'rb') as fp:
+#         i = 0
+#         for data in fp.readlines():
+#             i += 1
+#             json_data = json.loads(data)
+#             user1 = User.objects.create_user(
+#                 username=json_data['user_id'],
+#                 password='password',
+#                 first_name=json_data['name'],
+#                 last_name=json_data['name']
+#             )
+#             user1.save()
+#             user2 = models.User(
+#                 id=json_data['user_id'],
+#                 average_stars=json_data['average_stars'],
+#                 comment_count=json_data['review_count'],
+#                 user_id=user1.id
+#             )
+#             user2.save()
+#             print(i)
+#     return JsonResponse({'result': True})
 
 
 def test(request):
