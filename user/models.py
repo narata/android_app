@@ -13,7 +13,7 @@ class Business(models.Model):
 
 class Photo(models.Model):
     id = models.CharField(max_length=50, primary_key=True)
-    business = models.ForeignKey(Business)
+    business = models.ForeignKey(Business, on_delete=models.CASCADE)
     img_data = models.TextField(default=None)
     caption = models.CharField(max_length=200, default=None)
     label = models.CharField(max_length=200, default=None)
@@ -31,18 +31,18 @@ class User(models.Model):
     id = models.CharField(max_length=50, primary_key=True)
     comment_count = models.IntegerField(default=0)
     average_stars = models.FloatField(default=0)
-    user = models.ForeignKey(django.contrib.auth.models.User)
+    user = models.ForeignKey(django.contrib.auth.models.User, on_delete=models.CASCADE)
 
 
 class Comment(models.Model):
     id = models.CharField(max_length=50, primary_key=True)
-    business = models.ForeignKey(Business, default=None)
-    user = models.ForeignKey(User, default=None)
+    business = models.ForeignKey(Business, default=None, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, default=None, on_delete=models.CASCADE)
     date = models.DateTimeField()
     text = models.TextField()
     star = models.FloatField()
     
     
 class Recommend(models.Model):
-    business = models.ForeignKey(Business, default=None)
-    user = models.ForeignKey(User, default=None)
+    business = models.ForeignKey(Business, default=None, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, default=None, on_delete=models.CASCADE)

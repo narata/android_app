@@ -80,7 +80,7 @@ DATABASES = {
         'NAME': "android",
         'USER': "root",
         'PASSWORD': "narata",
-        'HOST': "localhost",
+        'HOST': "219.216.65.127",
         'PORT': "3306"
     }
 }

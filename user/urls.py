@@ -19,5 +19,6 @@ urlpatterns = [
     url(r'^eaten$', views.eaten),
     url(r'^get_self_comment$', views.get_self_comment),
     url(r'^test$', views.test),
+    url(r'^search_business$', views.search_business),
     # url(r'^insert_user$', views.insert_user)
 ]

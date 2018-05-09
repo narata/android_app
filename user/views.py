@@ -20,7 +20,7 @@ def create_user(request):
             email = request.POST['email']
         else:
             email = ''
-        user1 = User.objects.create_user(username=username, email=email, password=password)
+        user1 = User.objects.create_user(username=username, email=email, password=password, first_name=username)
         user1.save()
         user2 = models.User(id=username, user_id=user1.id)
         user2.save()
@@ -45,7 +45,8 @@ def login(request):
             result['result'] = True
             result['data'] = []
             result['data'].append({
-                "username": username
+                "username": username,
+                "name": user.first_name
             })
         else:
             result['result'] = False
@@ -184,6 +185,26 @@ def get_self_comment(request):
             "business_name": buf.business.name,
             "text": buf.text,
             "date": buf.date
+        })
+    return JsonResponse(result)
+
+
+# 查找店铺
+def search_business(request):
+    result = {}
+    business_name = request.GET['business_name']
+    buss = Business.objects.filter(name__contains=business_name)
+    result['result'] = True if len(buss) > 0 else False
+    if len(buss) >= 20:
+        buss = buss[:20]
+    result['data'] = []
+    for buf in buss:
+        result['data'].append({
+            'business_id': buf.id,
+            'business_name': buf.name,
+            'star': buf.star,
+            'attribute': buf.attribute,
+            'comment_count': buf.comment_count
         })
     return JsonResponse(result)
 
