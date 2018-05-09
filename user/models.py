@@ -40,9 +40,10 @@ class Comment(models.Model):
     user = models.ForeignKey(User, default=None, on_delete=models.CASCADE)
     date = models.DateTimeField()
     text = models.TextField()
-    star = models.FloatField()
+    star = models.FloatField(default=0)
     
     
 class Recommend(models.Model):
     business = models.ForeignKey(Business, default=None, on_delete=models.CASCADE)
     user = models.ForeignKey(User, default=None, on_delete=models.CASCADE)
+    value = models.FloatField(default=0)

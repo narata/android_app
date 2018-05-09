@@ -79,13 +79,13 @@ def get_user_business(request):
         result['data'] = []
         recommend = Recommend.objects.filter(user_id=user_id)
         for data in recommend:
-            photo = Photo.objects.filter(business=data.business)[0]
             result["data"].append({
                 "business_id": data.business.id,
                 "business_name": data.business.name,
                 "star": data.business.star,
                 "attribute": data.business.attribute,
                 "comment_count": data.business.comment_count,
+                "value": data.value
             })
     except Exception:
         result['result'] = False
